@@ -76,6 +76,7 @@
     <Compile Include="Assets\Colors.cs" />
     <Compile Include="Assets\Direction.cs" />
     <Compile Include="Assets\EnumerationHelper.cs" />
+    <Compile Include="Assets\GameSettings.cs" />
     <Compile Include="Assets\ValueForegroundConverter.cs" />
     <Compile Include="Assets\ValueBackgroundConverter.cs" />
     <Compile Include="ViewModel\SpielfeldElementViewModel.cs" />

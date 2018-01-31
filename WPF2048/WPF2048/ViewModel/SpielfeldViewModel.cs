@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using BlurryControls.DialogFactory;
 using GalaSoft.MvvmLight;
 using WPF2048.Assets;
 
@@ -25,28 +26,40 @@ namespace WPF2048.ViewModel
             {
                 case Direction.Up:
                     Debug.WriteLine($"{direction} has been pressed.");
-                    if(MoveVertical(true, 1))
+                    if(Move(true, 1))
                         SpawnElements(1,2);
                     break;
                 case Direction.Down:
                     Debug.WriteLine($"{direction} has been pressed.");
-                    if(MoveVertical(true, -1))
+                    if(Move(true, -1))
                         SpawnElements(1,2);
                     break;
                 case Direction.Right:
                     Debug.WriteLine($"{direction} has been pressed.");
-                    if(MoveVertical(false, -1))
+                    if(Move(false, -1))
                         SpawnElements(1,2);
                     break;
                 case Direction.Left:
                     Debug.WriteLine($"{direction} has been pressed.");
-                    if(MoveVertical(false, 1))
+                    if(Move(false, 1))
                         SpawnElements(1,2);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(direction), direction, null);
             }
-            
+
+            // lose
+            if(!MovesPossible())
+                BlurBehindMessageBox.Show("Cry, baby, cry");
+
+            foreach (var element in _spielfeldElementViewModels)
+            {
+                if (element.Value == 2048)
+                    BlurBehindMessageBox.Show("Well done");
+            }
+
+
+
         }
 
         #endregion
@@ -102,7 +115,95 @@ namespace WPF2048.ViewModel
 
         #region Private Methods
 
-        private bool MoveVertical(bool vertical, int dir)
+        private bool MovesPossible()
+        {
+            return MovesPossible(true, 1) || MovesPossible(true, -1) || MovesPossible(false, 1) || MovesPossible(false, -1);
+        }
+
+        // this is generally move() without actually moving
+        private bool MovesPossible(bool vertical, int dir)
+        {
+            var startIndex = dir == 1 ? 0 : Assets.GameSettings.ElementRoot - 1;
+            var endIndex = dir == 1 ? Assets.GameSettings.ElementRoot - 1 : 0;
+            var moved = false;
+
+            // for each column
+            for (var j = 0; j < Assets.GameSettings.ElementRoot; j++)
+            {
+                // move - merge - move
+                // move them together so nearest to <moveDir> get merged first
+                // merge equal values. gaps can appear
+                // move to close gaps
+
+
+                // move elements
+                for (var repeat = 0; repeat < Assets.GameSettings.ElementRoot - 1; repeat++)
+                {
+                    // move elements once
+                    for (var i = startIndex; i != endIndex;)
+                    {
+                        var currentElement = _spielfeldElementViewModels
+                            .Get2DElement(x: vertical ? j : i, y: vertical ? i : j).Value;
+                        var nextElement = _spielfeldElementViewModels
+                            .Get2DElement(x: vertical ? j : i + dir, y: vertical ? i + dir : j).Value;
+
+                        if (currentElement == 0 && nextElement != 0)
+                        {
+                            // (don't) move
+                            
+                            moved = true;
+                        }
+
+                        i = i + dir;
+                    }
+                }
+
+
+                // merge elements
+                for (var i = startIndex; i != endIndex;)
+                {
+                    var currentElement = _spielfeldElementViewModels
+                        .Get2DElement(x: vertical ? j : i, y: vertical ? i : j).Value;
+                    var nextElement = _spielfeldElementViewModels
+                        .Get2DElement(x: vertical ? j : i + dir, y: vertical ? i + dir : j).Value;
+
+                    if (currentElement != 0 && currentElement == nextElement)
+                    {
+                        // (don't) merge
+                        
+                        moved = true;
+                    }
+
+                    i = i + dir;
+                }
+
+                // move elements
+                for (var repeat = 0; repeat < Assets.GameSettings.ElementRoot - 1; repeat++)
+                {
+                    // move elements once
+                    for (var i = startIndex; i != endIndex;)
+                    {
+                        var currentElement = _spielfeldElementViewModels
+                            .Get2DElement(x: vertical ? j : i, y: vertical ? i : j).Value;
+                        var nextElement = _spielfeldElementViewModels
+                            .Get2DElement(x: vertical ? j : i + dir, y: vertical ? i + dir : j).Value;
+
+                        if (currentElement == 0 && nextElement != 0)
+                        {
+                            // (don't) move
+                            
+                            moved = true;
+                        }
+
+                        i = i + dir;
+                    }
+                }
+            }
+
+            return moved;
+        }
+
+        private bool Move(bool vertical, int dir)
         {
             var startIndex = dir == 1 ? 0 : Assets.GameSettings.ElementRoot - 1;
             var endIndex = dir == 1 ? Assets.GameSettings.ElementRoot - 1 : 0;
